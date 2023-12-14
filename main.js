@@ -68,7 +68,7 @@ function nextExpression(lexes) {
 }
 
 function buildAst(lexes) {
-  console.log("lexes", lexes);
+  //console.log("lexes", lexes);
   const [next, rest] = nextExpression(lexes);
   console.log(next, rest);
   const lex = next[0];
@@ -83,15 +83,21 @@ function buildAst(lexes) {
     return plus;
   } else if (lex.name == "start") {
     console.log("Building", lex);
-    const sign = next[next.length -1 ];
-    const b = binary(sign.value); 
-    const [pNext, pRest] = nextExpression(rest);
-    b.leftExpression = buildAst(next.slice(1, next.length - 2));
-    b.rightExpression = buildAst(pNext.slice(0, pNext.length -1));
-    const c = binary(pNext[pNext.length - 1].value)
-    c.leftExpression = b;
-    c.rightExpression = buildAst(pRest);
-    return c;
+    const last = next[next.length - 1]
+    console.log(last);
+    if (last.name == "sign") {
+      const sign = next[next.length -1 ];
+      const b = binary(sign.value); 
+      const [pNext, pRest] = nextExpression(rest);
+      b.leftExpression = buildAst(next.slice(1, next.length - 2));
+      b.rightExpression = buildAst(pNext.slice(0, pNext.length -1));
+      const c = binary(pNext[pNext.length - 1].value)
+      c.leftExpression = b;
+      c.rightExpression = buildAst(pRest);
+      return c;
+    } else {
+      return buildAst(next.slice(1, next.length - 1));
+    }
   } else {
     throw Error("unexpected lex:" + lex);
   }
@@ -100,6 +106,8 @@ function buildAst(lexes) {
 function calculate(left, right, operation) {
   if (operation == "+") {
     return Number(left) + Number(right);
+  } else if (operation == "-") {
+    return Number(left) - Number(right);
   } else if (operation == "*") {
     return Number(left) * Number(right);
   } else {
@@ -175,7 +183,7 @@ function drawAst(ast, offset) {
   }
 }
 
-const expression = "1 * (2 + 3) * 4 + 5";
+const expression = "1 * (2 + (6 - 3)) * 4 + (5)";
 const lexed = lex(expression);
 console.log(lexed);
 const ast = startBuildAst(lexed);
