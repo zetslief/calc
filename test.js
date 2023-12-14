@@ -1,4 +1,4 @@
-import { buildExpression, calculateAst, drawAst} from "./main.js";
+import { buildExpression, calculateAst, drawAst} from "./calc.js";
 
 const expressions = [
   ["1 + 1", 2],
@@ -18,6 +18,7 @@ const expressions = [
   ["++0", 1],
   ["--0", -1],
   ["--0 + 1", 0],
+  ["6 - -6", 12],
   ["1 - --0", 2],
   ["1 - ++0", 0],
   ["--(1)", 0],
@@ -31,7 +32,6 @@ const expressions = [
 
 function main(expressions) {
   for (const [expression, expectedResult] of expressions) {
-    console.log("Prcessing:", expression);
     const ast = buildExpression(expression);
     const result = calculateAst(ast);
     if (result == expectedResult) {

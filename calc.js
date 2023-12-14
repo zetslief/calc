@@ -1,17 +1,3 @@
-// AST:
-// Open: (
-// CloseParenthesis:  )
-// Minus: -
-// Plus: +
-// Mul: *
-// Div: /
-//
-// Token: (name, start, end)
-//
-// expression types:
-//  unary(type, operation, expression)
-//  binary(type, operation, leftExpression, rightExpression)
-
 const UNARY = "unary";
 const BINARY = "binary";
 
