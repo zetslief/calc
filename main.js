@@ -112,12 +112,19 @@ function buildAst(lexes) {
       } else {
         const b = binary(sign.value); 
         const [pNext, pRest] = nextExpression(rest);
-        b.leftExpression = buildAst(next.slice(1, next.length - 2));
-        b.rightExpression = buildAst(pNext.slice(0, pNext.length -1));
-        const c = binary(pNext[pNext.length - 1].value)
-        c.leftExpression = b;
-        c.rightExpression = buildAst(pRest);
-        return c;
+        if (pNext[0].name != "sign") {
+          b.leftExpression = buildAst(next.slice(1, next.length - 2));
+          b.rightExpression = buildAst(pNext.slice(0, pNext.length -1));
+          const c = binary(pNext[pNext.length - 1].value)
+          c.leftExpression = b;
+          c.rightExpression = buildAst(pRest);
+          return c;
+        } else {
+          const b = binary(sign.value); 
+          b.leftExpression = buildAst(next.slice(1, next.length - 2));
+          b.rightExpression = buildAst(rest);
+          return b;
+        }
       }
     } else {
       return buildAst(next.slice(1, next.length - 1));
@@ -125,6 +132,26 @@ function buildAst(lexes) {
   } else if (lex.name == "sign" && rest[0].name == "number") {
     rest[0].value = lex.value + rest[0].value;
     return buildAst(rest);
+  } else if (lex.name == "sign" && rest[0].name == "sign") {
+    const start = token("start", "(");
+    const number = token("number", lex.value + "1");
+    const sign = token("sign", "+");
+    let result = [start, number, sign];
+    let [incNext, incRest] = nextExpression(rest.slice(1, rest.length)); 
+    while (incNext[0].name == "sign") {
+      result = result.concat(incNext);
+      [incNext, incRest] = nextExpression(incRest);
+    }
+    if (incRest.length == 0) {
+      result = result.concat(incNext);
+      result.push(token("end", ")"));
+    } else {
+      result = result.concat(incNext.slice(0, incNext.length - 1));
+      result.push(token("end", ")"));
+      result = result.concat(incNext[incNext.length - 1]);
+      result = result.concat(incRest);
+    }
+    return buildAst(result);
   } else {
     console.log("Unexpected lex:", lex);
     console.log("In lexes:", lexes);
@@ -165,11 +192,11 @@ function isNumber(char) {
   return char >= "0" && char <= "9";
 }
 
-function lex(exp) {
-  function token(name, value) {
-    return { name, value };
-  }
+function token(name, value) {
+  return { name, value };
+}
 
+function lex(exp) {
   const result = [];
   for (let index = 0; index < exp.length; index += 1) {
     const symbol = exp[index];
@@ -209,7 +236,7 @@ export function drawAst(ast, offset = 0) {
     drawAst(ast.leftExpression, offset + 2);
     drawAst(ast.rightExpression, offset + 2);
   } else if (ast.type == UNKNOWN) {
-    console.log(" ".repeat(offset - 2) + "| -u>", ast.expression);
+    console.log(" ".repeat(Math.max(offset, 2) - 2) + "| -u>", ast.expression);
     return;
   } else {
     console.log(ast, offset);
