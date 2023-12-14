@@ -17,7 +17,6 @@ const BINARY = "binary";
 
 const UNKNOWN = "unknown";
 const PARENTHESIS = "parenthesis";
-const PLUS = "plus";
 
 function unary(operation) {
   return { type: UNARY, operation: operation, expression: null };
@@ -34,17 +33,6 @@ function binary(operation) {
 
 function unknown(value) {
   return {type: UNKNOWN, expression: value};
-}
-
-function addExpression(ast, expression) {
-  if (ast.type == UNARY) {
-    ast.expression = expression;
-  } else if (ast.leftExpression) {
-    ast.leftExpression = expression;
-  } else {
-    ast.rightExpression = expression;
-  }
-  return expression;
 }
 
 function startBuildAst(lexes) {
@@ -67,6 +55,20 @@ function nextExpression(lexes) {
   return [lexes, []];
 }
 
+function nextExpressionPrecedence(lexes, precedence) {
+  let result = [];
+  let [next, rest] = nextExpression(lexes);
+  do {
+    const last = next[next.length - 1];
+    result = result.concat(next);
+    if (last.name == "sign" && last.value != precedence) {
+      return [true, result, rest];
+    }
+    [next, rest] = nextExpression(rest);
+  } while (rest.length > 0)
+  return [false, [], []];
+}
+
 function buildAst(lexes) {
   const [next, rest] = nextExpression(lexes);
   const lex = next[0];
@@ -74,29 +76,51 @@ function buildAst(lexes) {
     if (next.length == 1) {
       return unknown(lex.value);
     }
-    const plus = binary(next[1].value);
-    plus.leftExpression = unknown(lex.value);
-    plus.rightExpression = buildAst(rest);
-    return plus;
+    const sign = next[1].value;
+    const [found, precNext, precRest] = nextExpressionPrecedence(rest, sign);
+    if (found && sign == "*") {
+      const nextSign = precNext[precNext.length - 1].value;
+      const plus = binary(nextSign);
+      const mul = binary(sign);
+      mul.leftExpression = unknown(lex.value);
+      mul.rightExpression = buildAst(precNext.slice(0, precNext.length - 1));
+      plus.leftExpression = mul;
+      plus.rightExpression = buildAst(precRest);
+      return plus;
+    } else {
+      const plus = binary(sign);
+      plus.leftExpression = unknown(lex.value);
+      plus.rightExpression = buildAst(rest);
+      return plus;
+    }
   } else if (lex.name == "start") {
     const last = next[next.length - 1]
     if (last.name == "sign") {
       const sign = next[next.length -1 ];
-      const b = binary(sign.value); 
-      const [pNext, pRest] = nextExpression(rest);
-      b.leftExpression = buildAst(next.slice(1, next.length - 2));
-      b.rightExpression = buildAst(pNext.slice(0, pNext.length -1));
-      const c = binary(pNext[pNext.length - 1].value)
-      c.leftExpression = b;
-      c.rightExpression = buildAst(pRest);
-      return c;
+      if (rest.length == 1) {
+        const b = binary(sign.value); 
+        b.leftExpression = buildAst(next.slice(1, next.length - 2));
+        b.rightExpression = unknown(rest[0].value);
+        return b;
+      } else {
+        const b = binary(sign.value); 
+        const [pNext, pRest] = nextExpression(rest);
+        b.leftExpression = buildAst(next.slice(1, next.length - 2));
+        b.rightExpression = buildAst(pNext.slice(0, pNext.length -1));
+        const c = binary(pNext[pNext.length - 1].value)
+        c.leftExpression = b;
+        c.rightExpression = buildAst(pRest);
+        return c;
+      }
     } else {
       return buildAst(next.slice(1, next.length - 1));
     }
   } else if (lex.name == "sign" && rest[0].name == "number") {
     rest[0].value = lex.value + rest[0].value;
     return buildAst(rest);
-  }{
+  } else {
+    console.log("Unexpected lex:", lex);
+    console.log("In lexes:", lexes);
     throw Error("unexpected lex:" + lex.name + lex.value);
   }
 }
@@ -124,6 +148,7 @@ export function calculateAst(ast) {
     return ast.expression;
   } else {
     console.error("ERROR: unknown ast type", ast);
+    throw Error();
   }
 }
 
@@ -164,7 +189,7 @@ function lex(exp) {
   return result;
 }
 
-export function drawAst(ast, offset) {
+export function drawAst(ast, offset = 0) {
   if (ast.type == UNARY) {
     console.log(" ".repeat(offset) + "|u>", ast.operation);
     drawAst(ast.expression, offset + 2);
@@ -173,10 +198,11 @@ export function drawAst(ast, offset) {
     drawAst(ast.leftExpression, offset + 2);
     drawAst(ast.rightExpression, offset + 2);
   } else if (ast.type == UNKNOWN) {
-    console.log(" ".repeat(offset) + "-u>", ast.expression);
+    console.log(" ".repeat(offset - 2) + "| -u>", ast.expression);
     return;
   } else {
-    console.error("UNKNOWN ERROR", ast, offset);
+    console.log(ast, offset);
+    throw Error("UNKNOWN ERROR" + ast, offset);
   }
 }
 
