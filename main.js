@@ -68,23 +68,18 @@ function nextExpression(lexes) {
 }
 
 function buildAst(lexes) {
-  //console.log("lexes", lexes);
   const [next, rest] = nextExpression(lexes);
-  console.log(next, rest);
   const lex = next[0];
   if (lex.name == "number") {
     if (next.length == 1) {
       return unknown(lex.value);
     }
-    console.log("Building", next[1]);
     const plus = binary(next[1].value);
     plus.leftExpression = unknown(lex.value);
     plus.rightExpression = buildAst(rest);
     return plus;
   } else if (lex.name == "start") {
-    console.log("Building", lex);
     const last = next[next.length - 1]
-    console.log(last);
     if (last.name == "sign") {
       const sign = next[next.length -1 ];
       const b = binary(sign.value); 
@@ -98,8 +93,11 @@ function buildAst(lexes) {
     } else {
       return buildAst(next.slice(1, next.length - 1));
     }
-  } else {
-    throw Error("unexpected lex:" + lex);
+  } else if (lex.name == "sign" && rest[0].name == "number") {
+    rest[0].value = lex.value + rest[0].value;
+    return buildAst(rest);
+  }{
+    throw Error("unexpected lex:" + lex.name + lex.value);
   }
 }
 
@@ -115,16 +113,15 @@ function calculate(left, right, operation) {
   }
 }
 
-function resolveAst(ast) {
+export function calculateAst(ast) {
   if (ast.type == UNARY) {
-    return resolveAst(ast.expression);
+    return calculateAst(ast.expression);
   } else if (ast.type == BINARY) {
-    const left = resolveAst(ast.leftExpression);
-    const right = resolveAst(ast.rightExpression);
-    console.log(left, right, ast.operation);
+    const left = calculateAst(ast.leftExpression);
+    const right = calculateAst(ast.rightExpression);
     return calculate(left, right, ast.operation);
   } else if (ast.type == UNKNOWN) {
-    return ast.expression[0];
+    return ast.expression;
   } else {
     console.error("ERROR: unknown ast type", ast);
   }
@@ -167,7 +164,7 @@ function lex(exp) {
   return result;
 }
 
-function drawAst(ast, offset) {
+export function drawAst(ast, offset) {
   if (ast.type == UNARY) {
     console.log(" ".repeat(offset) + "|u>", ast.operation);
     drawAst(ast.expression, offset + 2);
@@ -183,10 +180,7 @@ function drawAst(ast, offset) {
   }
 }
 
-const expression = "1 * (2 + (6 - 3)) * 4 + (5)";
-const lexed = lex(expression);
-console.log(lexed);
-const ast = startBuildAst(lexed);
-drawAst(ast, 1);
-console.log(expression);
-console.log(resolveAst(ast));
+export function buildExpression(expression) {
+  const lexed = lex(expression);
+  return startBuildAst(lexed);
+}
