@@ -78,7 +78,7 @@ function buildAst(lexes) {
     }
     const sign = next[1].value;
     const [found, precNext, precRest] = nextExpressionPrecedence(rest, sign);
-    if (found && sign == "*") {
+    if (found && (sign == "*" || sign == "/")) {
       const nextSign = precNext[precNext.length - 1].value;
       const plus = binary(nextSign);
       const mul = binary(sign);
