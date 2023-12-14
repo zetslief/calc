@@ -152,7 +152,7 @@ function lex(exp) {
     } else if (isNumber(symbol)) {
       let currentSymbol = symbol;
       let number = "";
-      while (isNumber(currentSymbol) && index < exp.length) {
+      while ((isNumber(currentSymbol) || currentSymbol == ".") && index < exp.length) {
         number += currentSymbol;
         index += 1;
         currentSymbol = exp[index];
