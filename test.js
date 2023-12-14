@@ -9,13 +9,14 @@ const expressions = [
   ["-1 + 1", 0],
   ["1.1 - 1.1", 0],
   ["1 / 2 + 1 / 2", 1],
+  ["2 * 2 / 2 + 2", 4],
   ["2 * (2 - 1) * 2 - 4", 0],
   ["2 * ((2 - 1) + 2)", 6],
   ["1 + 2 * 3 * ((4 - 5) + 6) * 7 * 8 + 9", 1690],
   ["((2 + 1)) + 1", 4],
 ]
 
-function main() {
+function main(expressions) {
   for (const [expression, expectedResult] of expressions) {
     const ast = buildExpression(expression);
     const result = calculateAst(ast);
@@ -30,4 +31,4 @@ function main() {
   }
 }
 
-main();
+main([expressions[8]]);

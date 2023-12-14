@@ -56,12 +56,19 @@ function nextExpression(lexes) {
 }
 
 function nextExpressionPrecedence(lexes, precedence) {
+  function differentPrecedence(first, second) {
+    if (first == "*" || first == "/") {
+      return second == "+" || second == "-";
+    } else {
+      return second == "*" || second == "/";
+    }
+  }
   let result = [];
   let [next, rest] = nextExpression(lexes);
   do {
     const last = next[next.length - 1];
     result = result.concat(next);
-    if (last.name == "sign" && last.value != precedence) {
+    if (last.name == "sign" && differentPrecedence(last.value, precedence)) {
       return [true, result, rest];
     }
     [next, rest] = nextExpression(rest);
