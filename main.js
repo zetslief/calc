@@ -132,6 +132,8 @@ function calculate(left, right, operation) {
     return Number(left) - Number(right);
   } else if (operation == "*") {
     return Number(left) * Number(right);
+  } else if (operation == "/") {
+    return Number(left) / Number(right);
   } else {
     throw Error("Unknown operation " + operation, operation);
   }
@@ -170,6 +172,8 @@ function lex(exp) {
       result.push(token("sign", "-"));
     } else if (symbol == "*") {
       result.push(token("sign", "*"));
+    } else if (symbol == "/") {
+      result.push(token("sign", "/"));
     } else if (symbol == "(") {
       result.push(token("start", "("));
     } else if (symbol == ")") {
