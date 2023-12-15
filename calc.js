@@ -1,24 +1,23 @@
-const UNARY = "unary";
 const BINARY = "binary";
 
 const UNKNOWN = "unknown";
-const PARENTHESIS = "parenthesis";
-
-function unary(operation) {
-  return { type: UNARY, operation: operation, expression: null };
-}
+const VALUE = "value";
 
 function binary(operation) {
   return {
     type: BINARY,
     operation: operation,
-    leftExpression: unary(PARENTHESIS),
-    rightExpression: unary(PARENTHESIS)
+    leftExpression: unknown(),
+    rightExpression: unknown()
   };
 }
 
+function number(value) {
+  return { type: VALUE, expression: value };
+}
+
 function unknown(value) {
-  return {type: UNKNOWN, expression: value};
+  return { type: UNKNOWN, expression: value };
 }
 
 function startBuildAst(lexes) {
@@ -67,7 +66,7 @@ function buildAst(lexes) {
   const lex = next[0];
   if (lex.name == "number") {
     if (next.length == 1) {
-      return unknown(lex.value);
+      return number(lex.value);
     }
     const sign = next[1].value;
     const [found, precNext, precRest] = nextExpressionPrecedence(rest, sign);
@@ -75,38 +74,38 @@ function buildAst(lexes) {
       const nextSign = precNext[precNext.length - 1].value;
       const plus = binary(nextSign);
       const mul = binary(sign);
-      mul.leftExpression = unknown(lex.value);
+      mul.leftExpression = number(lex.value);
       mul.rightExpression = buildAst(precNext.slice(0, precNext.length - 1));
       plus.leftExpression = mul;
       plus.rightExpression = buildAst(precRest);
       return plus;
     } else {
       const plus = binary(sign);
-      plus.leftExpression = unknown(lex.value);
+      plus.leftExpression = number(lex.value);
       plus.rightExpression = buildAst(rest);
       return plus;
     }
   } else if (lex.name == "start") {
     const last = next[next.length - 1]
     if (last.name == "sign") {
-      const sign = next[next.length -1 ];
+      const sign = next[next.length - 1];
       if (rest.length == 1) {
-        const b = binary(sign.value); 
+        const b = binary(sign.value);
         b.leftExpression = buildAst(next.slice(1, next.length - 2));
-        b.rightExpression = unknown(rest[0].value);
+        b.rightExpression = number(rest[0].value);
         return b;
       } else {
-        const b = binary(sign.value); 
+        const b = binary(sign.value);
         const [pNext, pRest] = nextExpression(rest);
         if (pNext[0].name != "sign") {
           b.leftExpression = buildAst(next.slice(1, next.length - 2));
-          b.rightExpression = buildAst(pNext.slice(0, pNext.length -1));
+          b.rightExpression = buildAst(pNext.slice(0, pNext.length - 1));
           const c = binary(pNext[pNext.length - 1].value)
           c.leftExpression = b;
           c.rightExpression = buildAst(pRest);
           return c;
         } else {
-          const b = binary(sign.value); 
+          const b = binary(sign.value);
           b.leftExpression = buildAst(next.slice(1, next.length - 2));
           b.rightExpression = buildAst(rest);
           return b;
@@ -123,7 +122,7 @@ function buildAst(lexes) {
     const number = token("number", lex.value + "1");
     const sign = token("sign", "+");
     let result = [start, number, sign];
-    let [incNext, incRest] = nextExpression(rest.slice(1, rest.length)); 
+    let [incNext, incRest] = nextExpression(rest.slice(1, rest.length));
     while (incNext[0].name == "sign") {
       result = result.concat(incNext);
       [incNext, incRest] = nextExpression(incRest);
@@ -160,14 +159,12 @@ function calculate(left, right, operation) {
 }
 
 export function calculateAst(ast) {
-  if (ast.type == UNARY) {
-    return calculateAst(ast.expression);
+  if (ast.type == VALUE) {
+    return ast.expression;
   } else if (ast.type == BINARY) {
     const left = calculateAst(ast.leftExpression);
     const right = calculateAst(ast.rightExpression);
     return calculate(left, right, ast.operation);
-  } else if (ast.type == UNKNOWN) {
-    return ast.expression;
   } else {
     console.error("ERROR: unknown ast type", ast);
     throw Error();
