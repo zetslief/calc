@@ -4,7 +4,8 @@
   "description": "simple calculator",
   "type": "module",
   "scripts": {
-    "test": "node test.js"
+    "test": "node test.js",
+    "calc": "node main.js"
   },
   "keywords": [
     "calculator"

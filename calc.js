@@ -212,8 +212,7 @@ function lex(exp) {
 
 export function drawAst(ast, offset = 0) {
   if (ast.type == VALUE) {
-    console.log(" ".repeat(offset) + "|n>", ast.operation);
-    drawAst(ast.expression, offset + 2);
+    console.log(" ".repeat(offset) + "|n>", ast.expression);
   } else if (ast.type == BINARY) {
     console.log(" ".repeat(offset) + "|b>", ast.operation);
     drawAst(ast.leftExpression, offset + 2);
