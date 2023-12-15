@@ -211,8 +211,8 @@ function lex(exp) {
 }
 
 export function drawAst(ast, offset = 0) {
-  if (ast.type == UNARY) {
-    console.log(" ".repeat(offset) + "|u>", ast.operation);
+  if (ast.type == VALUE) {
+    console.log(" ".repeat(offset) + "|n>", ast.operation);
     drawAst(ast.expression, offset + 2);
   } else if (ast.type == BINARY) {
     console.log(" ".repeat(offset) + "|b>", ast.operation);
