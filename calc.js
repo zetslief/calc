@@ -48,6 +48,7 @@ function nextExpressionPrecedence(lexes, precedence) {
       return second == "*" || second == "/";
     }
   }
+
   let result = [];
   let [next, rest] = nextExpression(lexes);
   do {
@@ -177,6 +178,17 @@ function isNumber(char) {
 
 function token(name, value) {
   return { name, value };
+}
+
+function precedence(operator) {
+  switch (operator) {
+    case "+": return 1;
+    case "-": return 1;
+    case "*": return 2;
+    case "/": return 2;
+    case "++": return 3;
+  }
+  throw SyntaxError("Operation is not known: " + operator);
 }
 
 function lex(exp) {
